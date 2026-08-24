@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="vi">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Customer Request Demo</title>
+	<style>
+		:root { font-family: Arial, sans-serif; color: #1f2937; background: #f3f4f6; }
+		body { max-width: 760px; margin: 40px auto; padding: 0 20px; }
+		main { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 8px 24px #00000012; }
+		h1 { margin-top: 0; }
+		form { display: grid; gap: 12px; margin-top: 24px; }
+		label { font-weight: 600; }
+		input, textarea, button { box-sizing: border-box; font: inherit; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; }
+		textarea { min-height: 100px; resize: vertical; }
+		button { color: white; background: #2563eb; border: 0; cursor: pointer; }
+		button:hover { background: #1d4ed8; }
+		.status { padding: 12px; background: #eff6ff; border-left: 4px solid #2563eb; }
+		pre { white-space: pre-wrap; background: #111827; color: #d1fae5; padding: 16px; border-radius: 6px; }
+		.error { color: #b91c1c; }
+	</style>
+</head>
+<body>
+	<main>
+		<h1>Trạng thái người dùng</h1>
+		<p id="user-status" class="status">Đang tải trạng thái...</p>
+
+		<h2>Gửi yêu cầu khách hàng</h2>
+		<form id="request-form">
+			<label for="customer-name">Tên khách hàng</label>
+			<input id="customer-name" name="customerName" required>
+			<label for="request-message">Nội dung yêu cầu</label>
+			<textarea id="request-message" name="message" required></textarea>
+			<button type="submit">Gửi yêu cầu</button>
+		</form>
+
+		<h2>Response</h2>
+		<pre id="response">Chưa có response.</pre>
+	</main>
+
+	<script>
+		const statusElement = document.querySelector('#user-status');
+		const responseElement = document.querySelector('#response');
+		const form = document.querySelector('#request-form');
+
+		async function loadUserStatus() {
+			try {
+				const response = await fetch('/api/get');
+				const data = await response.json();
+				if (!response.ok) throw new Error(data.message);
+				statusElement.textContent = `${data.message} Trạng thái: ${data.user.status}`;
+			} catch (error) {
+				statusElement.textContent = `Không thể tải trạng thái: ${error.message}`;
+				statusElement.classList.add('error');
+			}
+		}
+
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			const formData = new FormData(form);
+			try {
+				const response = await fetch('/api/request', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(Object.fromEntries(formData))
+				});
+				const data = await response.json();
+				responseElement.textContent = JSON.stringify(data, null, 2);
+				if (!response.ok) throw new Error(data.message);
+				form.reset();
+			} catch (error) {
+				responseElement.textContent = `Lỗi: ${error.message}`;
+			}
+		});
+
+		loadUserStatus();
+	</script>
+</body>
+</html>
